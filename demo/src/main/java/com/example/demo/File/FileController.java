@@ -1,6 +1,7 @@
 package com.example.demo.File;
 
 import com.example.demo.AES;
+import com.example.demo.Blockchain.Blockchain;
 import com.example.demo.IPFS.IpfsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,12 +26,18 @@ public class FileController {
     }
 
     @PostMapping
-    public ResponseEntity<String> newFile(@RequestParam("file")MultipartFile file) throws NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, IOException, BadPaddingException, InvalidKeyException {
+    public ResponseEntity<String> newFile(
+            @RequestParam("file")MultipartFile file,
+            @RequestBody FileInfo body
+    ) throws NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, IOException, BadPaddingException, InvalidKeyException {
         AES aes = new AES("secret123", 16);
         aes.encrypt((File) file);
 
-        String hash = ipfsService.publishFile(file);
+        String ipfsHash = ipfsService.publishFile(file);
 
-        return ResponseEntity.ok(String.format("file added with IPFS hash %s", hash));
+        Blockchain blockchain = Blockchain.getInstance();
+        String blockHash = blockchain.addFile(body.getSender(), body.getReceiver(), ipfsHash);
+
+        return ResponseEntity.ok(String.format("file added with IPFS hash %s, and block hash %s", ipfsHash, blockHash));
     }
 }
