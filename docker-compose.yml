@@ -1,0 +1,21 @@
+version: '3'
+services:
+  ipfs-daemon:
+    image: 'ipfs/kubo:v0.18.1'
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+      - "8080:8080"
+    user: "ipfs"
+    command: [ "daemon", "--enable-pubsub-experiment" ]
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ipfs.host=ipfs-daemon
+      - ipfs.port=5001
+    depends_on:
+      - ipfs-daemon
+    tty: true
+    restart: always

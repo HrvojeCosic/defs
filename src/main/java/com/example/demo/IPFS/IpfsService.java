@@ -21,14 +21,14 @@ public class IpfsService {
     }
 
     public String publishFile(MultipartFile file) throws IOException {
-        IPFS ipfs = ipfsConfig.ipfs;
+        IPFS ipfs = ipfsConfig.getIpfs();
             InputStream inputStream = new ByteArrayInputStream(file.getBytes());
             MerkleNode response = ipfs.add(new NamedStreamable.InputStreamWrapper(inputStream)).get(0);
             return response.hash.toBase58();
     }
 
     public byte[] findFile(String hash) throws IOException {
-            IPFS ipfs = ipfsConfig.ipfs;
+            IPFS ipfs = ipfsConfig.getIpfs();
             Multihash pointer = Multihash.fromBase58(hash);
             return ipfs.cat(pointer);
     }

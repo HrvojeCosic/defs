@@ -1,6 +1,7 @@
 package com.example.demo.IPFS;
 
 import io.ipfs.api.IPFS;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -9,10 +10,14 @@ import org.springframework.context.annotation.Scope;
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class IpfsConfig {
 
-    IPFS ipfs;
+    private final String ipfsAddress;
 
-    public IpfsConfig() {
-        ipfs = new IPFS("/ip4/127.0.0.1/tcp/5001");
+    public IpfsConfig(@Value("${ipfs.host:127.0.0.1}") String ipfsHost,
+                      @Value("${ipfs.port:5001}") String ipfsPort) {
+        ipfsAddress = String.format("/ip4/%s/tcp/%s", ipfsHost, ipfsPort);
     }
 
+    public IPFS getIpfs() {
+        return new IPFS(ipfsAddress);
+    }
 }

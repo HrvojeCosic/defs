@@ -1,23 +1,23 @@
 package com.example.demo.Blockchain;
 
+import com.example.demo.File.File;
+
 public class Block {
 
     private int index;
     private String timestamp;
     private int nonce;
     private String previousHash;
-    private String sender;
-    private String receiver;
+    private File fileInfo;
     private String fileValues;
     private String hash;
 
-    public Block(int index, String timestamp, int nonce, String previousHash, String sender, String receiver, String fileValues) {
+    public Block(int index, String timestamp, int nonce, String previousHash, File fileInfo, String fileValues) {
         this.index = index;
         this.timestamp = timestamp;
         this.nonce = nonce;
         this.previousHash = previousHash;
-        this.sender = sender;
-        this.receiver = receiver;
+        this.fileInfo = fileInfo;
         this.fileValues = fileValues;
         this.hash = BlockchainUtils.hashBlock(this);
     }
@@ -51,12 +51,8 @@ public class Block {
         return previousHash;
     }
 
-    public String getSender() {
-        return sender;
-    }
-
-    public String getReceiver() {
-        return receiver;
+    public File getFile() {
+        return fileInfo;
     }
 
     public String getFileValues() {
