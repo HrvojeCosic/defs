@@ -9,6 +9,8 @@ services:
     user: "ipfs"
     command: [ "daemon", "--enable-pubsub-experiment" ]
   app:
+    ports:
+      - "8081:8081"
     build:
       context: .
       dockerfile: Dockerfile
