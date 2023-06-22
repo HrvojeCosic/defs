@@ -8,6 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +18,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/node")
 public class NodeController {
 
+    private final SimpMessagingTemplate messagingTemplate;
+    private final SimpUserRegistry simpUserRegistry;
+
     ObjectMapper mapper = new ObjectMapper();
+
+    public NodeController(SimpMessagingTemplate messagingTemplate, SimpUserRegistry userRegistry) {
+        this.messagingTemplate = messagingTemplate;
+        this.simpUserRegistry = userRegistry;
+    }
+
+    @Scheduled(cron = "0/15 * * * * *")
+    public void socketNumberNotification() {
+        this.messagingTemplate.convertAndSend(
+                "/topic/socket_number_notification",
+                simpUserRegistry.getUserCount());
+    }
 
     @MessageMapping("/add_client_node")
     @SendTo("/topic/add_client_node")
