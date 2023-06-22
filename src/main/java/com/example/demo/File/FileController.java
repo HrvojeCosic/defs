@@ -4,6 +4,7 @@ import com.example.demo.AES;
 import com.example.demo.Blockchain.Blockchain;
 import com.example.demo.IPFS.IpfsService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -30,10 +31,10 @@ public class FileController {
         this.messagingTemplate = messagingTemplate;
     }
 
-    @PostMapping()
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<String> newFile(
-            @ModelAttribute FileInfo body,
-            @RequestParam("file") MultipartFile reqFile
+            @RequestPart FileInfo body,
+            @RequestPart("file") MultipartFile reqFile
     ) {
         Blockchain blockchain = Blockchain.getInstance();
 
