@@ -1,6 +1,7 @@
 package com.example.demo.P2P;
 
 import com.example.demo.Blockchain.Blockchain;
+import com.example.demo.WebsocketSessionRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
@@ -9,7 +10,6 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,20 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class NodeController {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final SimpUserRegistry simpUserRegistry;
+    private final WebsocketSessionRegistry sessionRegistry;
 
     ObjectMapper mapper = new ObjectMapper();
 
-    public NodeController(SimpMessagingTemplate messagingTemplate, SimpUserRegistry userRegistry) {
+    public NodeController(SimpMessagingTemplate messagingTemplate, WebsocketSessionRegistry sessionRegistry) {
         this.messagingTemplate = messagingTemplate;
-        this.simpUserRegistry = userRegistry;
+        this.sessionRegistry = sessionRegistry;
     }
 
     @Scheduled(cron = "0/15 * * * * *")
     public void socketNumberNotification() {
-        this.messagingTemplate.convertAndSend(
+        messagingTemplate.convertAndSend(
                 "/topic/socket_number_notification",
-                simpUserRegistry.getUserCount());
+                sessionRegistry.getActiveSessionCount());
     }
 
     @MessageMapping("/add_client_node")
