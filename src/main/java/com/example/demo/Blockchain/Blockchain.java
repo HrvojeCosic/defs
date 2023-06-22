@@ -6,6 +6,7 @@ import com.example.demo.P2P.Node;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Blockchain {
 
@@ -33,8 +34,14 @@ public class Blockchain {
         return nodes;
     }
 
-    public List<Block> getBlocks() {
-        return chain;
+    public List<BlockResponse> getBlocks() {
+        return chain.stream()
+                .map(block -> new BlockResponse(
+                        block.getIndex(), block.getHash(), block.getTimestamp(),
+                        block.getNonce(), block.getPreviousHash(), block.getFile().getId(),
+                        block.getFile().getHash(), block.getFile().getOwner(), block.getFileValues()
+                    )
+                ).collect(Collectors.toList());
     }
 
     private Block createBlock(int nonce, String previousHash, File file, String ipfsHash) {
