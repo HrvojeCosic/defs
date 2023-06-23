@@ -15,8 +15,9 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - ipfs.host=ipfs-daemon
+      - ipfs.host=172.18.0.2
       - ipfs.port=5001
+      - allowedOrigins=http://localhost:3000/
     depends_on:
       - ipfs-daemon
     tty: true

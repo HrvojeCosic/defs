@@ -18,6 +18,9 @@ public class AES {
     private final Cipher cipher;
     private final SecretKeySpec secretKey;
 
+    public SecretKeySpec getSecretKey() {
+        return secretKey;
+    }
     public AES(String secret, int length) throws NoSuchPaddingException, NoSuchAlgorithmException {
         byte[] key = padSecret(secret, length);
         this.secretKey = new SecretKeySpec(key, "AES");
@@ -37,14 +40,25 @@ public class AES {
     }
 
     private void write(File file) throws IOException, IllegalBlockSizeException, BadPaddingException {
-        byte[] input;
-        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
-            input = in.readAllBytes();
-        }
+        int blockSize = cipher.getBlockSize();
+        byte[] inputBuffer = new byte[blockSize];
+        byte[] outputBuffer;
 
-        byte[] output = this.cipher.doFinal(input);
-        try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
-            out.write(output);
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
+             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
+
+            int bytesRead;
+            while ((bytesRead = in.read(inputBuffer)) > 0) {
+                outputBuffer = cipher.update(inputBuffer, 0, bytesRead);
+                if (outputBuffer != null) {
+                    out.write(outputBuffer);
+                }
+            }
+
+            outputBuffer = cipher.doFinal();
+            if (outputBuffer != null) {
+                out.write(outputBuffer);
+            }
         }
     }
 

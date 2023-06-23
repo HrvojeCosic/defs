@@ -28,7 +28,7 @@ public class NodeController {
         this.sessionRegistry = sessionRegistry;
     }
 
-    @Scheduled(cron = "0/15 * * * * *")
+    @Scheduled(cron = "0/10 * * * * *")
     public void socketNumberNotification() {
         messagingTemplate.convertAndSend(
                 "/topic/socket_number_notification",

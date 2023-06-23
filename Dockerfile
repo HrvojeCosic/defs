@@ -1,8 +1,12 @@
-#Build
+#Pull deps
 FROM maven:3.8.3-openjdk-11-slim AS builder
 WORKDIR /app
+COPY pom.xml .
+RUN ["/usr/local/bin/mvn-entrypoint.sh", "mvn", "verify", "clean", "--fail-never"]
+
+#Package
 COPY . .
-RUN mvn clean install
+RUN ["mvn", "package"]
 
 #Create image
 FROM openjdk:11
