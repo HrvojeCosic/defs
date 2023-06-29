@@ -33,8 +33,6 @@ public class Block {
         return nonce;
     }
 
-
-
     public int getIndex() {
         return index;
     }

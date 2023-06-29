@@ -15,7 +15,7 @@ public class Blockchain {
     private final List<Node> nodes;
 
     private Blockchain() {
-        Block genesis = new Block(0, "", 0, "N.A", new File("N.A", "N.A", "N.A", "N.A"), "N.A");
+        Block genesis = new Block(0, "", 0, "N.A", new File("N.A", "N.A", "N.A", "N.A", "N.A"), "N.A");
 
         chain = new ArrayList<>();
         nodes = new ArrayList<>();
@@ -42,6 +42,10 @@ public class Blockchain {
                         block.getFile().getHash(), block.getFile().getOwner(), block.getFileValues()
                     )
                 ).collect(Collectors.toList());
+    }
+
+    public List<Block> getInternalBlocks() {
+        return chain;
     }
 
     private Block createBlock(int nonce, String previousHash, File file, String ipfsHash) {

@@ -5,12 +5,14 @@ public class File {
     private String hash;
     private String key;
     private String owner;
+    private String fileName;
 
-    public File(String id, String hash, String key, String owner) {
+    public File(String id, String hash, String key, String owner, String fileName) {
         this.id = id;
         this.hash = hash;
         this.key = key;
         this.owner = owner;
+        this.fileName = fileName;
     }
 
     public String getId() {
@@ -31,6 +33,10 @@ public class File {
 
     public String getKey() {
         return key;
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 
     public void setKey(String key) {

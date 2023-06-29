@@ -1,11 +1,11 @@
 package com.example.demo.File;
 
 import com.example.demo.AES;
+import com.example.demo.Blockchain.Block;
 import com.example.demo.Blockchain.Blockchain;
 import com.example.demo.IPFS.IpfsService;
 import org.apache.commons.io.FileUtils;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -20,12 +20,14 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URLConnection;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/file")
@@ -57,7 +59,8 @@ public class FileController {
 
             String fileHash = aes.encrypt(convFile);
             String fileId = String.format("%d%s", blockchain.getBlocks().size(), fileHash);
-            File file = new File(fileId, fileHash, body.getFileKey(), body.getSender());
+            String fileName = convFile.getAbsoluteFile().getName();
+            File file = new File(fileId, fileHash, body.getFileKey(), body.getSender(), fileName);
 
             String ipfsHash = ipfsService.publishFile(reqFile);
 
@@ -80,24 +83,31 @@ public class FileController {
             Blockchain blockchain = Blockchain.getInstance();
             byte[] fileBytes = ipfsService.findFile(req.getIpfsHash());
 
+            Block foundBlock = blockchain.getInternalBlocks()
+                    .stream()
+                    .filter(b -> Objects.equals(b.getFileValues(), req.getIpfsHash()))
+                    .collect(Collectors.toList()).get(0);
+
             Date currentDate = new Date();
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-            String fileName = dateFormat.format(currentDate);
+            String fileName = String.format("%s-%s", dateFormat.format(currentDate), foundBlock.getFile().getFileName());
 
             java.io.File file = new java.io.File(fileName);
             FileUtils.writeByteArrayToFile(file, fileBytes);
 
             int length = 16;
             AES aes = new AES(req.getFileKey(), length);;
-            String TEMP_FILE_HASH = blockchain.getBlocks().get(1).getFileHash();
-            byte[] decodedSecretKey = Base64.getDecoder().decode(TEMP_FILE_HASH);
+
+            byte[] decodedSecretKey = Base64.getDecoder().decode(foundBlock.getFile().getHash());
             aes.decrypt(file, decodedSecretKey);
 
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentDispositionFormData("attachment", file.getName());
-            return new ResponseEntity<>(new FileSystemResource(file), headers, HttpStatus.OK);
+            return ResponseEntity
+                    .ok()
+                    .contentType(MediaType.parseMediaType(
+                            URLConnection.guessContentTypeFromName(foundBlock.getFile().getFileName())
+                    ))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName())
+                    .body(new ByteArrayResource(fileBytes));
 
         } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException
                  | NoSuchPaddingException | NoSuchAlgorithmException | IOException e) {
@@ -106,5 +116,4 @@ public class FileController {
                     .body(new ByteArrayResource(e.getMessage().getBytes()));
         }
     }
-
 }
