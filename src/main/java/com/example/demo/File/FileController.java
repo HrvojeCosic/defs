@@ -4,8 +4,6 @@ import com.example.demo.AES;
 import com.example.demo.Blockchain.Block;
 import com.example.demo.Blockchain.Blockchain;
 import com.example.demo.IPFS.IpfsService;
-import org.apache.commons.io.FileUtils;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,10 +19,8 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -46,11 +42,10 @@ public class FileController {
             @RequestPart("file") MultipartFile reqFile
     ) {
         Blockchain blockchain = Blockchain.getInstance();
-
         try {
             AES aes = new AES(body.getFileKey(), 16);
-
             byte[] encryptedFileBytes = aes.encrypt(reqFile.getBytes());
+            String encryptedFileHash = encryptedFileBytes.toString();
 
             MultipartFile encryptedFile = new MockMultipartFile(
                     Objects.requireNonNull(reqFile.getOriginalFilename()),
@@ -58,21 +53,16 @@ public class FileController {
                     reqFile.getContentType(),
                     encryptedFileBytes
             );
-
             String ipfsHash = ipfsService.publishFile(encryptedFile);
 
-            String encryptedFileHash = aes.encrypt(reqFile.getOriginalFilename().getBytes()).toString();
-            String combinedData = String.format("%s%s",ipfsHash, encryptedFileHash);
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(combinedData.getBytes());
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            String fileId = sb.toString();
-
             String fileName = reqFile.getOriginalFilename();
-            File file = new File(fileId, encryptedFileHash, body.getFileKey(), body.getSender(), fileName);
+            File file = new File(
+                    FilesUtils.generateFileId(ipfsHash, encryptedFileHash),
+                    encryptedFileHash,
+                    body.getFileKey(),
+                    body.getSender(),
+                    fileName
+            );
 
             String blockHash = blockchain.addFile(file, ipfsHash);
             blockchain.syncBlockchain();
@@ -102,31 +92,25 @@ public class FileController {
             AES aes = new AES(fileKey, 16);
             byte[] decryptedFileBytes = aes.decrypt(encryptedFileBytes);
 
-            Date currentDate = new Date();
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-            String fileName = String.format("%s-%s", dateFormat.format(currentDate), foundBlock.getFile().getFileName());
-
-            java.io.File file = new java.io.File(fileName);
-            java.io.File tempFile = java.io.File.createTempFile("temp", null);
-            FileUtils.writeByteArrayToFile(tempFile, decryptedFileBytes);
-            ByteArrayResource resource = new ByteArrayResource(FileUtils.readFileToByteArray(tempFile));
-            tempFile.delete();
+            String fileName = FilesUtils.generateFileName(foundBlock);
 
             return ResponseEntity
                     .ok()
                     .contentType(MediaType.parseMediaType(
                             URLConnection.guessContentTypeFromName(foundBlock.getFile().getFileName())
-                    ))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName())
-                    .header("X-Suggested-Filename", file.getName())
+                        )
+                    )
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName)
+                    .header("X-Suggested-Filename", fileName)
                     .header("Access-Control-Expose-Headers", "X-Suggested-Filename")
-                    .body(resource);
+                    .body(FilesUtils.generateResource(decryptedFileBytes));
 
         } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException
                  | NoSuchPaddingException | NoSuchAlgorithmException | IOException e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(e.getMessage());
+            return new ResponseEntity<>(
+                    "Couldn't get the file. Make sure the provided file key is correct and try again",
+                    HttpStatus.BAD_REQUEST
+            );
         }
     }
 }
