@@ -15,7 +15,7 @@ public class Blockchain {
     private final List<Node> nodes;
 
     private Blockchain() {
-        Block genesis = new Block(0, "", 0, "N.A", new File("N.A", "N.A", "N.A", "N.A", "N.A"), "N.A");
+        Block genesis = new Block(1, "", 0, "N.A", new File("N.A", "N.A", "N.A", "N.A", "N.A"), "N.A");
 
         chain = new ArrayList<>();
         nodes = new ArrayList<>();
