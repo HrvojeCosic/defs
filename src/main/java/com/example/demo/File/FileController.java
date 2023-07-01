@@ -77,15 +77,15 @@ public class FileController {
         }
     }
 
-    @GetMapping()
-    public ResponseEntity<Resource> download(@RequestBody DownloadFileRequest req) {
+    @GetMapping
+    public ResponseEntity<Resource> download(@RequestParam String fileKey, @RequestParam String ipfsHash) {
         try {
             Blockchain blockchain = Blockchain.getInstance();
-            byte[] fileBytes = ipfsService.findFile(req.getIpfsHash());
+            byte[] fileBytes = ipfsService.findFile(ipfsHash);
 
             Block foundBlock = blockchain.getInternalBlocks()
                     .stream()
-                    .filter(b -> Objects.equals(b.getFileValues(), req.getIpfsHash()))
+                    .filter(b -> Objects.equals(b.getFileValues(), ipfsHash))
                     .collect(Collectors.toList()).get(0);
 
             Date currentDate = new Date();
@@ -96,7 +96,7 @@ public class FileController {
             FileUtils.writeByteArrayToFile(file, fileBytes);
 
             int length = 16;
-            AES aes = new AES(req.getFileKey(), length);;
+            AES aes = new AES(fileKey, length);;
 
             byte[] decodedSecretKey = Base64.getDecoder().decode(foundBlock.getFile().getHash());
             aes.decrypt(file, decodedSecretKey);
@@ -107,6 +107,8 @@ public class FileController {
                             URLConnection.guessContentTypeFromName(foundBlock.getFile().getFileName())
                     ))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName())
+                    .header("X-Suggested-Filename", file.getName())
+                    .header("Access-Control-Expose-Headers", "X-Suggested-Filename")
                     .body(new ByteArrayResource(fileBytes));
 
         } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException
