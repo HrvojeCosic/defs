@@ -6,13 +6,13 @@ public class Block {
 
     private int index;
     private String timestamp;
-    private int nonce;
+    private long nonce;
     private String previousHash;
     private File fileInfo;
     private String fileValues;
     private String hash;
 
-    public Block(int index, String timestamp, int nonce, String previousHash, File fileInfo, String fileValues) {
+    public Block(int index, String timestamp, long nonce, String previousHash, File fileInfo, String fileValues) {
         this.index = index;
         this.timestamp = timestamp;
         this.nonce = nonce;
@@ -22,14 +22,19 @@ public class Block {
         this.hash = BlockchainUtils.hashBlock(this);
     }
 
-    public int mineBlock(int difficulty) {
-        String target = "0".repeat(difficulty);
+public long mineBlock() {
+        Blockchain blockchain = Blockchain.getInstance();
+        int difficulty = blockchain.getDifficulty();
+        long startTime = System.nanoTime();
 
+        String target = "0".repeat(difficulty);
         while(!hash.substring(0, difficulty).equals(target)) {
             nonce ++;
             hash = BlockchainUtils.hashBlock(this);
         }
 
+        long endTime = System.nanoTime();
+        blockchain.setLatestMiningTime((endTime - startTime) / 1_000_000_000);
         return nonce;
     }
 
@@ -41,7 +46,7 @@ public class Block {
         return timestamp;
     }
 
-    public int getNonce() {
+    public long getNonce() {
         return nonce;
     }
 
@@ -59,6 +64,10 @@ public class Block {
 
     public String getHash() {
         return hash;
+    }
+
+    public void setNonce(long nonce) {
+        this.nonce = nonce;
     }
 
 }

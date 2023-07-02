@@ -1,15 +1,31 @@
 package com.example.demo.Blockchain;
 
-import org.apache.commons.codec.digest.DigestUtils;
-
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class BlockchainUtils {
 
-    public static String hashBlock(Block b) {
-        return DigestUtils.sha256Hex(
-                String.format("%s%s%s%s", b.getPreviousHash(), b.getTimestamp(), b.getNonce(), b.getFileValues())
-        );
+    public static String hashBlock(Block block) {
+        String dataToHash = block.getPreviousHash()
+                + block.getTimestamp()
+                + block.getNonce()
+                + block.getFileValues();
+        MessageDigest digest;
+        byte[] bytes = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+            bytes = digest.digest(dataToHash.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException ex) {
+            ex.printStackTrace();
+        }
+        StringBuffer buffer = new StringBuffer();
+        assert bytes != null;
+        for (byte b : bytes) {
+            buffer.append(String.format("%02x", b));
+        }
+        return buffer.toString();
     }
 
     public static boolean isChainValid(List<Block> chain) {

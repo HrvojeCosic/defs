@@ -10,9 +10,15 @@ import java.util.stream.Collectors;
 
 public class Blockchain {
 
+    private final int MINING_MAX_TIME = 10;
+    private final int MINING_MIN_TIME = 5;
+    private final int MINING_MAX_DIFFICULTY = 5;
+
     private static Blockchain instance = null;
     private List<Block> chain;
     private final List<Node> nodes;
+    private long latestBlockMiningTime;
+    private int latestDifficulty;
 
     private Blockchain() {
         Block genesis = new Block(1, "", 0, "N.A", new File("N.A", "N.A", "N.A", "N.A", "N.A"), "N.A");
@@ -38,7 +44,7 @@ public class Blockchain {
         return chain.stream()
                 .map(block -> new BlockResponse(
                         block.getIndex(), block.getHash(), block.getTimestamp(),
-                        block.getNonce(), block.getPreviousHash(), block.getFile().getId(),
+                        (int)block.getNonce(), block.getPreviousHash(), block.getFile().getId(),
                         block.getFile().getHash(), block.getFile().getOwner(), block.getFileValues()
                     )
                 ).collect(Collectors.toList());
@@ -57,10 +63,9 @@ public class Blockchain {
     public String addFile(File file, String ipfsHash) {
         Block previousBlock = chain.get(chain.size() - 1);
         String previousHash = BlockchainUtils.hashBlock(previousBlock);
-        int previousNonce = previousBlock.getNonce();
-        int currNonce = previousBlock.mineBlock(previousNonce);
-
-        Block block = createBlock(currNonce, previousHash, file, ipfsHash);
+        Block block = createBlock(0, previousHash, file, ipfsHash);
+        long currNonce = block.mineBlock();
+        block.setNonce(currNonce);
         return block.getHash();
     }
 
@@ -80,5 +85,18 @@ public class Blockchain {
        for (Node node: nodes) {
            node.setBlocks(chain);
        }
+   }
+
+   public void setLatestMiningTime(long time) {
+        latestBlockMiningTime = time;
+   }
+
+   public int getDifficulty() {
+        if (latestBlockMiningTime < MINING_MIN_TIME && latestDifficulty < MINING_MAX_DIFFICULTY) {
+            latestDifficulty++;
+        } else if (latestBlockMiningTime > MINING_MAX_TIME) {
+            latestDifficulty--;
+        }
+        return latestDifficulty;
    }
 }
